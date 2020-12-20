@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v1
-    - uses: cachix/install-nix-action@v6
+    - uses: cachix/install-nix-action@v12
     - name: Cache nix environment
       run: nix-shell -I nixpkgs=channel:nixos-19.09 --run "exit 0"
     - name: Build target and test
