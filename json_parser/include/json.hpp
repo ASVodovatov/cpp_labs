@@ -36,12 +36,19 @@ namespace types
     namespace json
     {
         //{ describe json data types
-        ... value = ...
 
-        ... array
-        ... object
+        using value = variant_decorator<int, float, std::string, bool, nullptr_t, boost::recursive_wrapper<class array>, boost::recursive_wrapper<class object>>;
 
-        ... json
+        class array : public std::vector<types::json::value>
+        {
+            using vector::vector;
+        };
+        class object : public std::map<std::string, types::json::value>
+        {
+            using map::map;
+        };
+
+        using json = variant_decorator<types::json::array, types::json::object>;
         //}
     }
 }
@@ -55,20 +62,40 @@ namespace parser
         const auto sfloat_ = x3::real_parser<float, x3::strict_real_policies<float>>();
 
         //{ describe json grammar
-        ... number = ...
-        ... nullable = ...
+        const auto number = sfloat_ | x3::int_;
+		
+		struct boolean_ : x3::symbols<bool>
+        {
+            boolean_()
+            {
+                add
+                    ("true", true)
+                    ("false", false);
+            }
+        } booleans;
+		auto boolean = x3::rule<class boolean, bool> {} = booleans;
 
-        ... array = ...
-        ... object = ...
-        ... json = ...
+		struct nullable_ : x3::symbols<nullptr_t>
+        {
+            nullable_()
+            {
+                add
+                ("null", nullptr);
+            }
+        } nullable_symbol;
+		auto nullable = x3::rule<class nullable, nullptr_t>{} = nullable_symbol;
 
-        ... value = ...
+        
+        x3::rule<class array, types::json::array> array = "array";
+        x3::rule<class object, types::json::object> object = "object";
+        x3::rule<class json, types::json::json> json = "json";
+        auto value = x3::rule<class value, types::json::value>{} = number | quoted_string | boolean | nullable | array | object;
+        
+        auto key_value = quoted_string >> ':' >> value;
 
-        ... key_value = ...
-
-        ... array??? = ...
-        ... object??? = ...
-        ... json??? = ...
+        auto array_def = x3::rule<class array_def, std::vector<types::json::value>>{} = '[' >> (value % ',') >> ']';
+        auto object_def = '{' >> (key_value % ',') >> '}';
+        auto json_def = array | object;
         //}
 
         BOOST_SPIRIT_DEFINE(array, object, json)
@@ -80,11 +107,11 @@ namespace literals
     namespace json
     {
         //{ describe ``_json`` literal
-        ... _json...
+        types::json::json operator"" _json(const char* str, size_t)
         {
-
+            return parser::load_from_string<types::json::json>(str, parser::json::json);
         }
-        //}
+        //}*/
     }
 }
 

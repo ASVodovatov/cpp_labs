@@ -25,27 +25,13 @@ struct variant_decorator : public x3::variant<Types...>
     template<class T>
     T& as()
     {
-        if constexpr (std::disjunction_v<std::is_same<boost::recursive_wrapper<T>, Types>...>)
-        {
-            return boost::get<boost::recursive_wrapper<T>>(*this).get();
-        }
-        else
-        {
-            return boost::get<T>(*this);
-        }
+		return boost::get<T>(*this);
     }
 
     template<class T>
     T as() const
     {
-        if constexpr (std::disjunction_v<std::is_same<boost::recursive_wrapper<T>, Types>...>)
-        {
-            return boost::get<boost::recursive_wrapper<T>>(*this).get();
-        }
-        else
-        {
-            return boost::get<T>(*this);
-        }
+		return boost::get<T>(*this);
     }
 };
 
